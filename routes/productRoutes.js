@@ -39,10 +39,18 @@ router.post('/', auth, async (req, res) => {
         const shop = await Shop.findOne({ ownerId: req.user.id });
         if (!shop) return res.status(404).json({ message: 'Shop not found for this user' });
 
-        const { name, category, description, price, imageUrl, sizesAvailable } = req.body;
+        const { name, category, description, price, imageUrl, imageUrls, sizesAvailable } = req.body;
         
+        // Support legacy frontend single imageUrl or new frontend imageUrls array
+        let finalImageUrls = [];
+        if (imageUrls && Array.isArray(imageUrls)) {
+            finalImageUrls = imageUrls;
+        } else if (imageUrl) {
+            finalImageUrls = [imageUrl];
+        }
+
         const newProduct = new Product({
-            shopId: shop._id, name, category, description, price, imageUrl, sizesAvailable
+            shopId: shop._id, name, category, description, price, imageUrls: finalImageUrls, sizesAvailable
         });
         
         await newProduct.save();

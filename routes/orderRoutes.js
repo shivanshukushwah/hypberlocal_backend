@@ -29,10 +29,10 @@ router.get('/', auth, async (req, res) => {
 // POST place a new order (Customer)
 router.post('/', auth, async (req, res) => {
     try {
-        const { shopId, items, totalAmount, deliveryAddress, paymentMethod } = req.body;
+        const { shopId, items, totalAmount, deliveryAddress, paymentMethod, paymentStatus, razorpayOrderId, razorpayPaymentId } = req.body;
         
         const newOrder = new Order({
-            customerId: req.user.id, shopId, items, totalAmount, deliveryAddress, paymentMethod
+            customerId: req.user.id, shopId, items, totalAmount, deliveryAddress, paymentMethod, paymentStatus, razorpayOrderId, razorpayPaymentId
         });
         
         await newOrder.save();

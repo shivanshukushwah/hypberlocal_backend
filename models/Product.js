@@ -6,7 +6,16 @@ const productSchema = new mongoose.Schema({
     category: { type: String, enum: ['MEN', 'WOMEN', 'KIDS'], required: true },
     description: { type: String },
     price: { type: Number, required: true },
-    imageUrl: { type: String },
+    imageUrls: { 
+        type: [String], 
+        validate: {
+            validator: function(v) {
+                return v && v.length >= 1 && v.length <= 5;
+            },
+            message: 'A product must have between 1 to 5 images'
+        },
+        required: true
+    },
     sizesAvailable: { type: [String], default: [] }
 }, { timestamps: true });
 
