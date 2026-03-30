@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema({
     state: { type: String },
     otp: { type: String },
     otpExpires: { type: Date },
+    walletBalance: { type: Number, default: 0 }
 }, { timestamps: true });
 
 userSchema.index({ location: '2dsphere' });

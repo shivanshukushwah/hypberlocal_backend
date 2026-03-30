@@ -46,7 +46,32 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id/status', auth, async (req, res) => {
     try {
         const { status } = req.body;
-        const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+        const order = await Order.findById(req.params.id).populate('shopId');
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        // If transitioning to DELIVERED for a PAID online order, distribute funds
+        if (status === 'DELIVERED' && order.status !== 'DELIVERED') {
+            if (order.paymentMethod === 'ONLINE' && order.paymentStatus === 'PAID') {
+                const User = require('../models/User');
+                
+                // Economics: Fixed ₹50 delivery fee, rest goes to shopkeeper
+                const deliveryFee = 50;
+                const shopEarnings = Math.max(0, order.totalAmount - deliveryFee);
+                
+                // 1. Credit Delivery Partner Wallet
+                if (order.deliveryPartnerId) {
+                    await User.findByIdAndUpdate(order.deliveryPartnerId, { $inc: { walletBalance: deliveryFee } });
+                }
+                
+                // 2. Credit Shopkeeper Wallet
+                if (order.shopId && order.shopId.ownerId) {
+                    await User.findByIdAndUpdate(order.shopId.ownerId, { $inc: { walletBalance: shopEarnings } });
+                }
+            }
+        }
+
+        order.status = status;
+        await order.save();
         res.json(order);
     } catch (err) {
         res.status(500).json({ error: err.message });
