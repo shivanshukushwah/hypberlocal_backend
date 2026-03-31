@@ -58,12 +58,24 @@ router.post('/register-otp', async (req, res) => {
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, phone, role, address, country, state, latitude, longitude } = req.body;
+        const userRole = role || 'CUSTOMER';
 
-        const existingUser = await User.findOne({ email });
-        if (existingUser) return res.status(400).json({ message: 'User already exists' });
+        // Check if user already exists with this email AND role, or phone AND role
+        const existingUser = await User.findOne({ 
+            $or: [
+                { email, role: userRole },
+                { phone, role: userRole }
+            ] 
+        });
+        
+        if (existingUser) {
+            return res.status(400).json({ 
+                message: `An account as ${userRole} already exists with this email or phone` 
+            });
+        }
 
         const user = new User({
-            name, email, password, phone, role: role || 'CUSTOMER', address, country, state,
+            name, email, password, phone, role: userRole, address, country, state,
             location: {
                 type: 'Point',
                 coordinates: [parseFloat(longitude || 77.2090), parseFloat(latitude || 28.6139)]
@@ -90,11 +102,14 @@ router.post('/register', async (req, res) => {
 // POST: Login (Password Based)
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
+        const { email, password, role } = req.body;
+        if (!email || !password || !role) {
+            return res.status(400).json({ message: 'Email, password, and role are required' });
+        }
 
-        const user = await User.findOne({ email });
-        if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+        // Find user with specific email AND role
+        const user = await User.findOne({ email, role });
+        if (!user) return res.status(401).json({ message: `No ${role} account found with this email` });
 
         const isMatch = await user.comparePassword(password);
         if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });

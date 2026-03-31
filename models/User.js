@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
     supabaseId: { type: String, unique: true, sparse: true },
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true },
     password: { type: String, required: true },
     phone: { type: String },
     role: { type: String, enum: ['CUSTOMER', 'SHOPKEEPER', 'DELIVERY', 'ADMIN'], default: 'CUSTOMER' },
@@ -20,6 +20,8 @@ const userSchema = new mongoose.Schema({
     walletBalance: { type: Number, default: 0 }
 }, { timestamps: true });
 
+userSchema.index({ email: 1, role: 1 }, { unique: true });
+userSchema.index({ phone: 1, role: 1 }, { unique: true });
 userSchema.index({ location: '2dsphere' });
 
 // Pre-save hook to hash password
